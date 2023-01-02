@@ -3,29 +3,29 @@ from dota2.enums import DOTAJoinLobbyResult, DOTA_GC_TEAM, DOTABotDifficulty
 
 
 class Lobby(object):
-    EVENT_LOBBY_INVITE = 'lobby_invite'
+    EVENT_LOBBY_INVITE = "lobby_invite"
     """When a lobby invite is received
     :param message: `CSDOTALobbyInvite <https://github.com/ValvePython/dota2/blob/ca75440adca20d852b9aec3917e4387466848d5b/protobufs/dota_gcmessages_common_match_management.proto#L100>`_
     :type  message: proto message
     """
-    EVENT_LOBBY_INVITE_REMOVED = 'lobby_invite_removed'
+    EVENT_LOBBY_INVITE_REMOVED = "lobby_invite_removed"
     """When a lobby invite is no longer valid
     :param message: `CSDOTALobbyInvite <https://github.com/ValvePython/dota2/blob/ca75440adca20d852b9aec3917e4387466848d5b/protobufs/dota_gcmessages_common_match_management.proto#L100>`_
     :type  message: proto message
     """
-    EVENT_LOBBY_NEW = 'lobby_new'
+    EVENT_LOBBY_NEW = "lobby_new"
     """Entered a lobby, either by creating one or accepting an invite
 
     :param message: `CSODOTALobby <https://github.com/ValvePython/dota2/blob/ca75440adca20d852b9aec3917e4387466848d5b/protobufs/dota_gcmessages_common_match_management.proto#L193>`_
     :type  message: proto message
     """
-    EVENT_LOBBY_CHANGED = 'lobby_changed'
+    EVENT_LOBBY_CHANGED = "lobby_changed"
     """Anything changes to the lobby state, players, options, broadcasters...
 
     :param message: `CSODOTALobby <https://github.com/ValvePython/dota2/blob/ca75440adca20d852b9aec3917e4387466848d5b/protobufs/dota_gcmessages_common_match_management.proto#L193>`_
     :type  message: proto message
     """
-    EVENT_LOBBY_REMOVED = 'lobby_removed'
+    EVENT_LOBBY_REMOVED = "lobby_removed"
     """The lobby is not valid anymore, quit or kick.
 
     :param message: `CSODOTALobby <https://github.com/ValvePython/dota2/blob/ca75440adca20d852b9aec3917e4387466848d5b/protobufs/dota_gcmessages_common_match_management.proto#L193>`_
@@ -35,12 +35,14 @@ class Lobby(object):
 
     def __init__(self):
         super(Lobby, self).__init__()
-        self.socache.on(('new', ESOType.CSODOTALobbyInvite), self.__handle_lobby_invite)
-        self.socache.on(('removed', ESOType.CSODOTALobbyInvite), self.__handle_lobby_invite_removed)
+        self.socache.on(("new", ESOType.CSODOTALobbyInvite), self.__handle_lobby_invite)
+        self.socache.on(
+            ("removed", ESOType.CSODOTALobbyInvite), self.__handle_lobby_invite_removed
+        )
 
-        self.socache.on(('new', ESOType.CSODOTALobby), self.__handle_lobby_new)
-        self.socache.on(('updated', ESOType.CSODOTALobby), self.__handle_lobby_changed)
-        self.socache.on(('removed', ESOType.CSODOTALobby), self.__handle_lobby_removed)
+        self.socache.on(("new", ESOType.CSODOTALobby), self.__handle_lobby_new)
+        self.socache.on(("updated", ESOType.CSODOTALobby), self.__handle_lobby_changed)
+        self.socache.on(("removed", ESOType.CSODOTALobby), self.__handle_lobby_removed)
 
     def __lobby_cleanup(self):
         self.lobby = None
@@ -74,7 +76,9 @@ class Lobby(object):
         """
         return self.create_tournament_lobby(password=password, options=options)
 
-    def create_tournament_lobby(self, password="", tournament_game_id=None, tournament_id=0, options=None):
+    def create_tournament_lobby(
+        self, password="", tournament_game_id=None, tournament_id=0, options=None
+    ):
         """
         Sends a message to the Game Coordinator requesting to create a tournament lobby.
 
@@ -90,16 +94,15 @@ class Lobby(object):
         options = {} if options is None else options
         options["pass_key"] = password
 
-        command = {
-            "lobby_details": options,
-            "pass_key": password
-        }
+        command = {"lobby_details": options, "pass_key": password}
         if tournament_game_id is not None:
-            command.update({
-                "tournament_game": True,
-                "tournament_game_id": tournament_game_id,
-                "tournament_id": tournament_id
-            })
+            command.update(
+                {
+                    "tournament_game": True,
+                    "tournament_game_id": tournament_game_id,
+                    "tournament_id": tournament_id,
+                }
+            )
 
         if self.verbose_debug:
             self._LOG.debug("Sending match CMsgPracticeLobbyCreate request")
@@ -117,14 +120,18 @@ class Lobby(object):
             return
 
         options = {} if options is None else options
-        options['lobby_id'] = self.lobby.lobby_id
+        options["lobby_id"] = self.lobby.lobby_id
 
         if self.verbose_debug:
             self._LOG.debug("Changing lobby options of lobby %s", self.lobby.lobby_id)
 
         self.send(EDOTAGCMsg.EMsgGCPracticeLobbySetDetails, options)
 
-    def get_lobby_list(self, server_region=EServerRegion.Unspecified, game_mode=DOTA_GameMode.DOTA_GAMEMODE_NONE):
+    def get_lobby_list(
+        self,
+        server_region=EServerRegion.Unspecified,
+        game_mode=DOTA_GameMode.DOTA_GAMEMODE_NONE,
+    ):
         """
         Get a lobby list
 
@@ -141,16 +148,18 @@ class Lobby(object):
         if self.verbose_debug:
             self._LOG.debug("Requesting lobby list.")
 
-        jobid = self.send(EDOTAGCMsg.EMsgGCLobbyList,
-                          {
-                             'server_region': server_region,
-                             'game_mode': game_mode,
-                          })
+        jobid = self.send(
+            EDOTAGCMsg.EMsgGCLobbyList,
+            {
+                "server_region": server_region,
+                "game_mode": game_mode,
+            },
+        )
 
         resp = self.wait_msg(EDOTAGCMsg.EMsgGCLobbyListResponse, timeout=10)
         return resp.lobbies if resp else None
 
-    def get_practice_lobby_list(self, tournament_games=False, password=''):
+    def get_practice_lobby_list(self, tournament_games=False, password=""):
         """
         Get list of practice lobbies
 
@@ -167,11 +176,13 @@ class Lobby(object):
         if self.verbose_debug:
             self._LOG.debug("Requesting practice lobby list.")
 
-        jobid = self.send_job(EDOTAGCMsg.EMsgGCPracticeLobbyList,
-                             {
-                                'tournament_games': tournament_games,
-                                'pass_key': password,
-                             })
+        jobid = self.send_job(
+            EDOTAGCMsg.EMsgGCPracticeLobbyList,
+            {
+                "tournament_games": tournament_games,
+                "pass_key": password,
+            },
+        )
 
         resp = self.wait_msg(jobid, timeout=10)
         return resp.lobbies if resp else None
@@ -228,9 +239,7 @@ class Lobby(object):
         if self.verbose_debug:
             self._LOG.debug("Inviting %s to a lobby." % steam_id)
 
-        self.send(EGCBaseMsg.EMsgGCInviteToLobby, {
-            "steam_id": steam_id
-        })
+        self.send(EGCBaseMsg.EMsgGCInviteToLobby, {"steam_id": steam_id})
 
     def practice_lobby_kick(self, account_id):
         """
@@ -245,9 +254,7 @@ class Lobby(object):
         if self.verbose_debug:
             self._LOG.debug("Kicking %s from the lobby." % account_id)
 
-        self.send(EDOTAGCMsg.EMsgGCPracticeLobbyKick, {
-            "account_id": account_id
-        })
+        self.send(EDOTAGCMsg.EMsgGCPracticeLobbyKick, {"account_id": account_id})
 
     def practice_lobby_kick_from_team(self, account_id):
         """
@@ -262,9 +269,9 @@ class Lobby(object):
         if self.verbose_debug or self.lobby.leader_id != self.steam.steam_id:
             self._LOG.debug("Kicking %s from his lobby team." % account_id)
 
-        self.send(EDOTAGCMsg.EMsgGCPracticeLobbyKickFromTeam, {
-            "account_id": account_id
-        })
+        self.send(
+            EDOTAGCMsg.EMsgGCPracticeLobbyKickFromTeam, {"account_id": account_id}
+        )
 
     def join_practice_lobby(self, id, password=""):
         """
@@ -278,15 +285,20 @@ class Lobby(object):
         :rtype: :class: `DOTAJoinLobbyResult`. `DOTAJoinLobbyResult.DOTA_JOIN_RESULT_TIMEOUT` if timeout
         """
         if self.verbose_debug:
-            self._LOG.debug("Trying to join practice lobby %s using password %s" % (id, password))
+            self._LOG.debug(
+                "Trying to join practice lobby %s using password %s" % (id, password)
+            )
 
-        jobid = self.send_job(EDOTAGCMsg.EMsgGCPracticeLobbyJoin, {
-            "lobby_id": id,
-            "pass_key": password
-        })
+        jobid = self.send_job(
+            EDOTAGCMsg.EMsgGCPracticeLobbyJoin, {"lobby_id": id, "pass_key": password}
+        )
         resp = self.wait_msg(jobid, timeout=10)
 
-        return DOTAJoinLobbyResult(resp.result) if resp else DOTAJoinLobbyResult.DOTA_JOIN_RESULT_TIMEOUT
+        return (
+            DOTAJoinLobbyResult(resp.result)
+            if resp
+            else DOTAJoinLobbyResult.DOTA_JOIN_RESULT_TIMEOUT
+        )
 
     def leave_practice_lobby(self):
         """
@@ -339,10 +351,13 @@ class Lobby(object):
         if self.verbose_debug:
             self._LOG.debug("Joining slot %s of lobby team %s." % (slot, team))
 
-        self.send(EDOTAGCMsg.EMsgGCPracticeLobbySetTeamSlot, {
-            "team": team,
-            "slot": slot
-        })
+        self.send(
+            EDOTAGCMsg.EMsgGCPracticeLobbySetCoach,
+            {
+                "team": team
+                # "slot": slot
+            },
+        )
 
     def join_practice_lobby_broadcast_channel(self, channel=1):
         """
@@ -357,11 +372,16 @@ class Lobby(object):
         if self.verbose_debug:
             self._LOG.debug("Joining channel %s of lobby broadcst." % channel)
 
-        self.send(EDOTAGCMsg.EMsgGCPracticeLobbyJoinBroadcastChannel, {
-            "channel": channel
-        })
+        self.send(
+            EDOTAGCMsg.EMsgGCPracticeLobbyJoinBroadcastChannel, {"channel": channel}
+        )
 
-    def add_bot_to_practice_lobby(self, slot=1, team=DOTA_GC_TEAM.GOOD_GUYS, bot_difficulty=DOTABotDifficulty.BOT_DIFFICULTY_PASSIVE):
+    def add_bot_to_practice_lobby(
+        self,
+        slot=1,
+        team=DOTA_GC_TEAM.GOOD_GUYS,
+        bot_difficulty=DOTABotDifficulty.BOT_DIFFICULTY_PASSIVE,
+    ):
         """
         Add a bot in the lobby.
 
@@ -376,13 +396,15 @@ class Lobby(object):
             return
 
         if self.verbose_debug:
-            self._LOG.debug("Adding a bot %s in slot %s of lobby team %s." % (bot_difficulty, slot, team))
+            self._LOG.debug(
+                "Adding a bot %s in slot %s of lobby team %s."
+                % (bot_difficulty, slot, team)
+            )
 
-        self.send(EDOTAGCMsg.EMsgGCPracticeLobbySetTeamSlot, {
-            "team": team,
-            "slot": slot,
-            "bot_difficulty": bot_difficulty
-        })
+        self.send(
+            EDOTAGCMsg.EMsgGCPracticeLobbySetTeamSlot,
+            {"team": team, "slot": slot, "bot_difficulty": bot_difficulty},
+        )
 
     def respond_to_lobby_invite(self, lobby_id, accept=False):
         """
@@ -394,12 +416,14 @@ class Lobby(object):
         :type  accept: :class:`bool`
         """
         if self.verbose_debug:
-            self._LOG.debug("Responding to lobby invite %s, accept: %s" % (lobby_id, accept))
+            self._LOG.debug(
+                "Responding to lobby invite %s, accept: %s" % (lobby_id, accept)
+            )
 
-        self.send(EGCBaseMsg.EMsgGCLobbyInviteResponse, {
-            "lobby_id": lobby_id,
-            "accept": accept
-        })
+        self.send(
+            EGCBaseMsg.EMsgGCLobbyInviteResponse,
+            {"lobby_id": lobby_id, "accept": accept},
+        )
 
     def destroy_lobby(self):
         """
