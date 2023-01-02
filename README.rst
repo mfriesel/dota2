@@ -27,7 +27,7 @@ Install the current dev version from ``github``::
     
     # if you are installing over existing install
     # note: "only-if-needed" will only update dependecies if needed
-    pip install -U --upgrade-strategy only-if-needed git+https://github.com/ValvePython/dota2
+    pip install -U --upgrade-strategy only-if-needed git+https://github.com/mfriesel/dota2
 
 
 
